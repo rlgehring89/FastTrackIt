@@ -17,26 +17,28 @@ zip_code = 45236
 city = 'Cincinnati'
 
 #Driver Options
-browser = "FIREFOX" #FIREFOX or CHROME
-headless = False #Open the browser in headless mode = True
+browser = "FIREFOX" #FIREFOX or CHROME. Havent tested with Chrome yet
+headless = False #Open the browser in headless mode = True/False
 implicitly_wait = 15 #Seconds to wait implicitly if not explicitly set
 
-def setup_driver (headless,browser,implicitly_wait):
-	if headless:
-		driver_options = Options()
-		driver_options.headless = True
-		driver = webdriver.Firefox(options=driver_options)
-	else:
-		driver = webdriver.Firefox()
+def change_page (driver,wait,page_num):
+	page_input = driver.find_element_by_id("pageInput")
+	page_input.send_keys(page_num)
 	
-	actions = ActionChains(driver)
-	#Wait time when using explicit wait
-	wait = WebDriverWait(driver, 10)
-	driver.implicitly_wait(15)
-	return driver,actions,wait
+	#Click Go button
+	go_button = driver.find_element_by_id("pagebtn")
+	go_button.click()
+
+	#Wait for loading overlay
+	loadingOverlay = driver.find_element_by_class_name("overlay")
+	wait.until(EC.invisibility_of_element_located(loadingOverlay))
+	time.sleep(2)
+
+def clean_up ():
+	driver.quit()
 
 def filter_auctions_by_zip(driver,wait,bid_fta_homepage,zip_code):
-
+	#Probably wont use this function. Will use the all auctions page instead
 	driver.get(bid_fta_homepage)
 
 	#Fill out zipcode and search radius(miles)
@@ -86,23 +88,24 @@ def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city):
 
 def get_all_auctions_on_page (driver,wait):
 	#Print all auction results on page bidfta.com/home
+	page_of_auction_details = []
 	all_auctions = driver.find_elements_by_xpath("//div[starts-with(@id,'auctionContainer')]")
+	#Record details for each auction
 	for each_auction in all_auctions:
-		'''
-		auction_end = each_auction.get_attribute("col-xs-6 endTime")
-		time_remaining = each_auction.get_attribute("time42531")
-		'''
-		#all_children = each_auction.find_elements_by_xpath(".//*")
-		print(each_auction.find_element_by_xpath(".//p[starts-with(text(),'Auction:')]").text)
-		#print(auction_title_id.text)
-		#print(len(auction_title_id))
-		#for ids in auction_title_id:
-		#	print(ids.text)
-		#link = each_auction.find_elements_by_xpath("//a[starts-with(@href,'/auctionDetails')]")
-		#print(link)
-		#print(each_auction.text)
+		auction_id = each_auction.find_element_by_xpath(".//p[starts-with(text(),'Auction:')]").text
+		auction_end = each_auction.find_element_by_xpath(".//div[contains(@class,'endTime')]").text
+		auction_time_remaining = each_auction.find_element_by_xpath(".//span[starts-with(@id,'time')]").text
+		auction_link = each_auction.find_element_by_xpath(".//a[starts-with(@href,'/auctionDetails')]").get_attribute("href")
+		individual_auction_details = [auction_id,auction_end,auction_time_remaining,auction_link]
+		#print(auction_id)
+		#print(auction_end)
+		#print(auction_time_remaining)
+		#print(auction_link)
+		page_of_auction_details.append(individual_auction_details)
 	
-	#This gets auctions on the bidfta.com when filtering by zipcode... doesnt currently work right.
+	return page_of_auction_details
+	
+	#This gets auctions on the bidfta.com when filtering by zipcode... doesnt currently work, probably wont use this.
 	'''
 	results = driver.find_elements_by_xpath("//div[contains(@class,'product-list padd-0 slick-slide')]") #product-list padd-0 slick-slide
 	
@@ -119,37 +122,41 @@ def get_total_pages (driver):
 
 	return int(total_pages.text)
 
-def change_page (driver,wait,page_num):
-	page_input = driver.find_element_by_id("pageInput")
-	page_input.send_keys(page_num)
-	
-	#Click Go button
-	go_button = driver.find_element_by_id("pagebtn")
-	go_button.click()
-
-	#Wait for loading overlay
-	loadingOverlay = driver.find_element_by_class_name("overlay")
-	wait.until(EC.invisibility_of_element_located(loadingOverlay))
-	time.sleep(2)
-
 def find_all_auctions_by_city(driver):
+	all_pages_of_auction_details = []
 	filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city)
 	#Get the number of result pages
 	total_result_pages = get_total_pages (driver)
 	#Scan all pages and pull auction info
 	for i in range(2, total_result_pages+1):
-		get_all_auctions_on_page(driver,wait)
+		one_page_of_auctions = get_all_auctions_on_page(driver,wait)
 		change_page(driver,wait,i)
+		all_pages_of_auction_details.append(one_page_of_auctions)
 	#Get final page
-	get_all_auctions_on_page(driver,wait)
+	one_page_of_auctions = get_all_auctions_on_page(driver,wait)
+	all_pages_of_auction_details.append(one_page_of_auctions)
 
-def clean_up ():
-	driver.quit()
+	return all_pages_of_auction_details
+
+def setup_driver (headless,browser,implicitly_wait):
+	if headless:
+		driver_options = Options()
+		driver_options.headless = True
+		driver = webdriver.Firefox(options=driver_options)
+	else:
+		driver = webdriver.Firefox()
+	
+	actions = ActionChains(driver)
+	#Wait time when using explicit wait
+	wait = WebDriverWait(driver, 10)
+	driver.implicitly_wait(15)
+	return driver,actions,wait
 
 #Run it
 driver,actions,wait = setup_driver (headless,browser,implicitly_wait)
 filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city)
-get_all_auctions_on_page (driver,wait)
-#find_all_auctions_by_city(driver)
+one_page_of_auctions = get_all_auctions_on_page (driver,wait)
+print(one_page_of_auctions)
+#all_auctions = find_all_auctions_by_city(driver)
 #clean_up()
 
