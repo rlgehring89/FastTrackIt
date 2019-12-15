@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
 import urllib.request
 import time
 import pandas as pd
@@ -103,7 +104,7 @@ def get_all_auctions_on_page (driver,wait):
 		#print(auction_link)
 		page_of_auction_details.append(individual_auction_details)
 	
-	return page_of_auction_details
+	
 	
 	#This gets auctions on the bidfta.com when filtering by zipcode... doesnt currently work, probably wont use this.
 	'''
@@ -115,12 +116,46 @@ def get_all_auctions_on_page (driver,wait):
 		print(eachAuction.get_attribute("aria-describedby"))
 		print(eachAuction.text)
 	'''
-
+	return page_of_auction_details
+	
 def get_total_pages (driver):
 	total_pages = driver.find_element_by_xpath("//span[@class='total total_page']")
-	print(total_pages.text)
+	#print(total_pages.text)
 
 	return int(total_pages.text)
+
+def get_all_items_on_page(driver,auction_link):
+	auction_link_num = auction_link[-5:]
+	auction_items_link = "https://www.bidfta.com/auctionItems?listView=true&idauctions=" + auction_link_num + "&pageId=1"
+	driver.get(auction_items_link)
+
+	page_of_item_details = []
+	all_items_on_page = driver.find_elements_by_xpath("//div[starts-with(@id,'itemContainer')]")
+	#Record details for each auction
+	for each_item in all_items_on_page:
+
+		item_lot_id = each_item.find_element_by_xpath(".//span[starts-with(@id,'lotcode')]").text
+		item_description = each_item.find_element_by_xpath(".//p[contains(@class,'title')]").text
+		item_status = each_item.find_element_by_xpath(".//p[contains(@class,'itemStatus')]").text
+		item_current_bid = each_item.find_element_by_xpath(".//span[starts-with(@id,'currentBid')]").text
+		item_msrp_raw = each_item.find_element_by_xpath(".//div[contains(@class,'text-right')]").text
+		if item_msrp_raw:
+			item_msrp = item_msrp_raw.split('$ ')[1]
+		else:
+			item_msrp = None
+
+		individual_item_details = [item_lot_id,item_description,item_status,item_current_bid,item_msrp]
+		#auction_id = each_auction.find_element_by_xpath(".//p[starts-with(text(),'Auction:')]").text
+		#auction_end = each_auction.find_element_by_xpath(".//div[contains(@class,'endTime')]").text
+		#auction_time_remaining = each_auction.find_element_by_xpath(".//span[starts-with(@id,'time')]").text
+		#auction_link = each_auction.find_element_by_xpath(".//a[starts-with(@href,'/auctionDetails')]").get_attribute("href")
+		#print(auction_id)
+		#print(auction_end)
+		#print(auction_time_remaining)
+		#print(auction_link)
+		page_of_item_details.append(individual_item_details)
+	
+	return page_of_item_details
 
 def find_all_auctions_by_city(driver):
 	all_pages_of_auction_details = []
@@ -131,10 +166,10 @@ def find_all_auctions_by_city(driver):
 	for i in range(2, total_result_pages+1):
 		one_page_of_auctions = get_all_auctions_on_page(driver,wait)
 		change_page(driver,wait,i)
-		all_pages_of_auction_details.append(one_page_of_auctions)
+		all_pages_of_auction_details.extend(one_page_of_auctions)
 	#Get final page
 	one_page_of_auctions = get_all_auctions_on_page(driver,wait)
-	all_pages_of_auction_details.append(one_page_of_auctions)
+	all_pages_of_auction_details.extend(one_page_of_auctions)
 
 	return all_pages_of_auction_details
 
@@ -149,14 +184,22 @@ def setup_driver (headless,browser,implicitly_wait):
 	actions = ActionChains(driver)
 	#Wait time when using explicit wait
 	wait = WebDriverWait(driver, 10)
-	driver.implicitly_wait(15)
+	driver.implicitly_wait(2)
 	return driver,actions,wait
 
 #Run it
 driver,actions,wait = setup_driver (headless,browser,implicitly_wait)
-filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city)
-one_page_of_auctions = get_all_auctions_on_page (driver,wait)
-print(one_page_of_auctions)
-#all_auctions = find_all_auctions_by_city(driver)
-#clean_up()
 
+#Get one page of auctions for cincinnati
+#filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city)
+#one_page_of_auctions = get_all_auctions_on_page (driver,wait)
+#print(one_page_of_auctions)
+
+#Get all pages of auctions for cincinnati
+#all_auctions = find_all_auctions_by_city(driver)
+#print(len(all_auctions))
+
+#Get one page of items from auction
+page_of_items = get_all_items_on_page(driver,"https://www.bidfta.com/auctionDetails?idauctions=42769")
+print(len(page_of_items))
+#clean_up()
