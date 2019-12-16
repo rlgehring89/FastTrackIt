@@ -95,18 +95,13 @@ def get_all_auctions_on_page (driver,wait):
 	all_auctions = driver.find_elements_by_xpath("//div[starts-with(@id,'auctionContainer')]")
 	#Record details for each auction
 	for each_auction in all_auctions:
-		auction_id = each_auction.find_element_by_xpath(".//p[starts-with(text(),'Auction:')]").text
+		auction_id = each_auction.find_element_by_xpath(".//p[starts-with(text(),'Auction:')]").text.split(': ')[1]
 		auction_end = each_auction.find_element_by_xpath(".//div[contains(@class,'endTime')]").text
 		auction_time_remaining = each_auction.find_element_by_xpath(".//span[starts-with(@id,'time')]").text
 		auction_link = each_auction.find_element_by_xpath(".//a[starts-with(@href,'/auctionDetails')]").get_attribute("href")
-		#individual_auction_details = [auction_id,auction_end,auction_time_remaining,auction_link]
-		#print(auction_id)
-		#print(auction_end)
-		#print(auction_time_remaining)
-		#print(auction_link)
-		#auction_details = [auction_end,auction_time_remaining,auction_link]
+		auction_details = [auction_end,auction_time_remaining,auction_link]
+		
 		auction_dictionary[auction_id] = auction_details
-		#page_of_auction_details.append(individual_auction_details)
 
 	return auction_dictionary
 	
@@ -116,7 +111,13 @@ def get_total_pages (driver):
 
 	return int(total_pages.text)
 
-def get_all_items_on_page(driver,auction_link):
+def get_all_items_on_page_by_auction_id(driver,auction_id,auction_dictionary):
+	#Get auction dictionary items
+	auction_details = auction_dictionary.get(auction_id)
+	auction_end = auction_details[0]
+	auction_time_remaining = auction_details[1]
+	auction_link = auction_details[2]
+
 	auction_link_num = auction_link[-5:]
 	auction_items_link = "https://www.bidfta.com/auctionItems?listView=true&idauctions=" + auction_link_num + "&pageId=1"
 	driver.get(auction_items_link)
@@ -141,6 +142,21 @@ def get_all_items_on_page(driver,auction_link):
 		item_dictionary[item_lot_id] = item_details
 
 	return item_dictionary
+
+def add_items_to_auction(driver,auction_id,auction_dictionary):
+	#Get auction dictionary items
+	auction_details = auction_dictionary.get(auction_id)
+	auction_end = auction_details[0]
+	auction_time_remaining = auction_details[1]
+	auction_link = auction_details[2]
+
+
+
+	#Add items to auction_dictionary
+	auction_details.extend(item_details)
+	auction_dictionary_with_items[auction_id] = auction_details
+
+	return auction_dictionary_with_items
 
 def find_all_auctions_by_city(driver):
 	auction_dictionary = {}
@@ -180,9 +196,9 @@ driver,actions,wait = setup_driver (headless,browser,implicitly_wait)
 
 #Get all pages of auctions for cincinnati
 all_auctions = find_all_auctions_by_city(driver)
-print(all_auctions.keys())
+#print(all_auctions.keys())
 
 #Get one page of items from auction
-#page_of_items = get_all_items_on_page(driver,"https://www.bidfta.com/auctionDetails?idauctions=42769")
-#print(len(page_of_items))
+page_of_items = get_all_items_on_page_by_auction_id(driver,list(all_auctions.keys())[0],all_auctions)
+print(len(page_of_items))
 #clean_up()
