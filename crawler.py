@@ -22,9 +22,6 @@ browser = "FIREFOX" #FIREFOX or CHROME. Havent tested with Chrome yet
 headless = False #Open the browser in headless mode = True/False
 implicitly_wait = 15 #Seconds to wait implicitly if not explicitly set
 
-class Auction:
-	def __init__(self,item)
-
 def change_page (driver,wait,page_num):
 	page_input = driver.find_element_by_id("pageInput")
 	page_input.send_keys(page_num)
@@ -172,6 +169,7 @@ def add_all_items_to_auction(driver,auction_id,auction_dictionary):
 
 	return auction_dictionary
 
+'''
 def add_items_to_auction(driver,auction_id,auction_dictionary):
 	#Get auction dictionary items
 	auction_details = auction_dictionary.get(auction_id)
@@ -187,6 +185,7 @@ def add_items_to_auction(driver,auction_id,auction_dictionary):
 	auction_dictionary_with_items[auction_id] = auction_details
 
 	return auction_dictionary_with_items
+'''
 
 def find_all_auctions_by_city(driver):
 	auction_dictionary = {}
