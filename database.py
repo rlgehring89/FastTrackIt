@@ -65,3 +65,7 @@ def setup_database():
         create_table(conn, sql_create_auction_items_table)
     else:
         print("Error! cannot create the database connection.")
+
+    #cursor = conn.cursor()
+    conn.commit()
+    conn.close()
