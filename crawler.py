@@ -14,13 +14,8 @@ import pandas as pd
 #Define
 bid_fta_homepage = 'https://www.bidfta.com/'
 bid_fta_all_auctions = 'https://www.bidfta.com/home'
-zip_code = 45236
-city = 'Cincinnati'
 
-#Driver Options
-browser = "FIREFOX" #FIREFOX or CHROME. Havent tested with Chrome yet
-headless = False #Open the browser in headless mode = True/False
-implicitly_wait = 15 #Seconds to wait implicitly if not explicitly set
+
 
 def change_page (driver,wait,page_num):
 	page_input = driver.find_element_by_id("pageInput")
@@ -35,7 +30,7 @@ def change_page (driver,wait,page_num):
 	wait.until(EC.invisibility_of_element_located(loadingOverlay))
 	time.sleep(2)
 
-def clean_up ():
+def clean_up (driver):
 	driver.quit()
 
 def filter_auctions_by_zip(driver,wait,bid_fta_homepage,zip_code):
@@ -142,7 +137,7 @@ def get_all_items_on_page(driver):
 
 	return item_dictionary
 
-def add_all_items_to_auction(driver,auction_id,auction_dictionary):
+def add_all_items_to_auction(driver,wait,auction_id,auction_dictionary):
 	#Navigate to item page for a specific auction
 	navigate_to_auction_items_by_auction_id(driver,auction_id,auction_dictionary)
 
@@ -169,6 +164,24 @@ def add_all_items_to_auction(driver,auction_id,auction_dictionary):
 
 	return auction_dictionary
 
+def get_all_items_by_auction_id(driver,wait,auction_id,auction_dictionary):
+	#Navigate to item page for a specific auction
+	navigate_to_auction_items_by_auction_id(driver,auction_id,auction_dictionary)
+
+	#Get the number of result pages
+	total_result_pages = get_total_pages (driver)
+
+	#Scan all pages and pull auction info into new dictionary
+	all_items_dict = {}
+	for i in range(2, total_result_pages+1):
+		all_items_dict.update(get_all_items_on_page(driver))
+		change_page(driver,wait,i)
+
+	#Get final page
+	all_items_dict.update(get_all_items_on_page(driver))
+
+	return all_items_dict
+
 '''
 def add_items_to_auction(driver,auction_id,auction_dictionary):
 	#Get auction dictionary items
@@ -187,7 +200,7 @@ def add_items_to_auction(driver,auction_id,auction_dictionary):
 	return auction_dictionary_with_items
 '''
 
-def find_all_auctions_by_city(driver):
+def find_all_auctions_by_city(driver,wait,city):
 	auction_dictionary = {}
 	filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city)
 	#Get the number of result pages
