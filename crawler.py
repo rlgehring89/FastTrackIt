@@ -15,8 +15,6 @@ import pandas as pd
 bid_fta_homepage = 'https://www.bidfta.com/'
 bid_fta_all_auctions = 'https://www.bidfta.com/home'
 
-
-
 def change_page (driver,wait,page_num):
 	page_input = driver.find_element_by_id("pageInput")
 	page_input.send_keys(page_num)
@@ -32,24 +30,6 @@ def change_page (driver,wait,page_num):
 
 def clean_up (driver):
 	driver.quit()
-
-def filter_auctions_by_zip(driver,wait,bid_fta_homepage,zip_code):
-	#Probably wont use this function. Will use the all auctions page instead
-	driver.get(bid_fta_homepage)
-
-	#Fill out zipcode and search radius(miles)
-	zip_code_field = driver.find_element_by_id("zip")
-	zip_code_field.send_keys(zip_code)
-	milesRadius = Select(driver.find_element_by_id("miles"))
-	milesRadius.select_by_value('50')
-	#Click button to apply filter
-	filterButton = driver.find_element_by_class_name("filterAuction")
-	filterButton.click()
-
-	#Wait for loading overlay
-	loadingOverlay = driver.find_element_by_class_name("overlay")
-	wait.until(EC.invisibility_of_element_located(loadingOverlay))
-	time.sleep(2)
 
 def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city):
 	#Open the Webpage
@@ -84,10 +64,10 @@ def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city):
 
 def get_all_auctions_on_page (driver,wait):
 	#Print all auction results on page bidfta.com/home
-	#page_of_auction_details = []
 	auction_dictionary = {}
 	auction_details = []
 	all_auctions = driver.find_elements_by_xpath("//div[starts-with(@id,'auctionContainer')]")
+
 	#Record details for each auction
 	for each_auction in all_auctions:
 		auction_id = each_auction.find_element_by_xpath(".//p[starts-with(text(),'Auction:')]").text.split(': ')[1]
@@ -95,7 +75,6 @@ def get_all_auctions_on_page (driver,wait):
 		auction_time_remaining = each_auction.find_element_by_xpath(".//span[starts-with(@id,'time')]").text
 		auction_link = each_auction.find_element_by_xpath(".//a[starts-with(@href,'/auctionDetails')]").get_attribute("href")
 		auction_details = [auction_end,auction_time_remaining,auction_link]
-		
 		auction_dictionary[auction_id] = auction_details
 
 	return auction_dictionary
@@ -110,7 +89,6 @@ def navigate_to_auction_items_by_auction_id(driver,auction_id,auction_dictionary
 	#Get auction dictionary items
 	auction_details = auction_dictionary.get(auction_id)
 	auction_link = auction_details[2]
-
 	auction_link_num = auction_link[-5:]
 	auction_items_link = "https://www.bidfta.com/auctionItems?listView=true&idauctions=" + auction_link_num + "&pageId=1"
 	driver.get(auction_items_link)
@@ -119,6 +97,7 @@ def get_all_items_on_page(driver):
 	item_dictionary = {}
 	item_details = []
 	all_items_on_page = driver.find_elements_by_xpath("//div[starts-with(@id,'itemContainer')]")
+
 	#Record details for each auction
 	for each_item in all_items_on_page:
 		#Find the item details we are interested in
@@ -131,38 +110,12 @@ def get_all_items_on_page(driver):
 			item_msrp = item_msrp_raw.split('$ ')[1]
 		else:
 			item_msrp = None
+
 		#Use the lot_id as a key and the rest of the details as values
 		item_details = [item_description,item_status,item_current_bid,item_msrp]
 		item_dictionary[item_lot_id] = item_details
 
 	return item_dictionary
-
-def add_all_items_to_auction(driver,wait,auction_id,auction_dictionary):
-	#Navigate to item page for a specific auction
-	navigate_to_auction_items_by_auction_id(driver,auction_id,auction_dictionary)
-
-	#Get the number of result pages
-	total_result_pages = get_total_pages (driver)
-
-	#Scan all pages and pull auction info into new dictionary
-	all_items_dict = {}
-	for i in range(2, total_result_pages+1):
-		all_items_dict.update(get_all_items_on_page(driver))
-		change_page(driver,wait,i)
-
-	#Get final page
-	all_items_dict.update(get_all_items_on_page(driver))
-	
-	#Get auction dictionary items
-	auction_details = auction_dictionary.get(auction_id)
-	
-	#Add the items to the values for that auction_id
-	auction_details.extend(all_items_dict)
-
-	#Add that item-dictionary to the auction-dictionary
-	auction_dictionary[auction_id] = auction_details
-
-	return auction_dictionary
 
 def get_all_items_by_auction_id(driver,wait,auction_id,auction_dictionary):
 	#Navigate to item page for a specific auction
@@ -182,8 +135,8 @@ def get_all_items_by_auction_id(driver,wait,auction_id,auction_dictionary):
 
 	return all_items_dict
 
-'''
-def add_items_to_auction(driver,auction_id,auction_dictionary):
+''' Turn this into a function to loop through all filtered auctions and add items to the database
+def add_items_to_all_auctions(driver,auction_id,auction_dictionary):
 	#Get auction dictionary items
 	auction_details = auction_dictionary.get(auction_id)
 	auction_end = auction_details[0]
@@ -227,3 +180,56 @@ def setup_driver (headless,browser,implicitly_wait):
 	wait = WebDriverWait(driver, 10)
 	driver.implicitly_wait(10)
 	return driver,actions,wait
+
+
+
+
+#Planning to delete, but saving for short term reference
+''' Probably should delete this, was my first attempt at scraping a page and we dont really need this page
+def filter_auctions_by_zip(driver,wait,bid_fta_homepage,zip_code):
+	#Probably wont use this function. Will use the all auctions page instead
+	driver.get(bid_fta_homepage)
+
+	#Fill out zipcode and search radius(miles)
+	zip_code_field = driver.find_element_by_id("zip")
+	zip_code_field.send_keys(zip_code)
+	milesRadius = Select(driver.find_element_by_id("miles"))
+	milesRadius.select_by_value('50')
+	#Click button to apply filter
+	filterButton = driver.find_element_by_class_name("filterAuction")
+	filterButton.click()
+
+	#Wait for loading overlay
+	loadingOverlay = driver.find_element_by_class_name("overlay")
+	wait.until(EC.invisibility_of_element_located(loadingOverlay))
+	time.sleep(2)
+'''
+
+''' Dont think I'll use this either, it was a way to store things in a dictionary vs a database. Database seems like a better option.
+def add_all_items_to_auction(driver,wait,auction_id,auction_dictionary):
+	#Navigate to item page for a specific auction
+	navigate_to_auction_items_by_auction_id(driver,auction_id,auction_dictionary)
+
+	#Get the number of result pages
+	total_result_pages = get_total_pages (driver)
+
+	#Scan all pages and pull auction info into new dictionary
+	all_items_dict = {}
+	for i in range(2, total_result_pages+1):
+		all_items_dict.update(get_all_items_on_page(driver))
+		change_page(driver,wait,i)
+
+	#Get final page
+	all_items_dict.update(get_all_items_on_page(driver))
+	
+	#Get auction dictionary items
+	auction_details = auction_dictionary.get(auction_id)
+	
+	#Add the items to the values for that auction_id
+	auction_details.extend(all_items_dict)
+
+	#Add that item-dictionary to the auction-dictionary
+	auction_dictionary[auction_id] = auction_details
+
+	return auction_dictionary
+'''

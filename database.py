@@ -87,3 +87,31 @@ def setup_database():
     #cursor = conn.cursor()
     conn.commit()
     conn.close()
+
+#### Add auction details from dict to database #####
+def add_auction_details_to_database(all_auctions,cursor):
+    for key,value in all_auctions.items():
+        auction_id_value = key
+        auction_end_value = value[0]
+        auction_time_remaining_value = value[1]
+        auction_link_value = value[2]
+        in_statement = """
+                    INSERT INTO auctions (auction_id, auction_end, auction_time_remaining, auction_link) 
+                    VALUES (?,?,?,?);
+                    """
+        cursor.execute(in_statement, (auction_id_value,auction_end_value,auction_time_remaining_value,auction_link_value))
+
+#### Add items from auction dict #####
+def add_items_to_database(all_items_for_auction,auction_id,cursor):
+    for key,value in all_items_for_auction.items():
+        item_lot_id_value = key
+        item_description_value = value[0]
+        item_status_value = value[1]
+        item_current_bid_value = value[2]
+        item_msrp_value = value[3]
+        auction_id_value = auction_id
+        in_statement = """
+                    INSERT INTO auction_items (item_lot_id, item_description, item_status, item_current_bid, item_msrp, auction_id) 
+                    VALUES (?,?,?,?,?,?);
+                    """
+        cursor.execute(in_statement, (item_lot_id_value,item_description_value,item_status_value,item_current_bid_value,item_msrp_value,auction_id_value))
