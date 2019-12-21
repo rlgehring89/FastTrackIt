@@ -1,7 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 
-database = r"data/pythonsqlite.db"
+database = r"../data/pythonsqlite.db"
 
 def clear_database(db_file,conn):
     sql_clear_auctions = """
