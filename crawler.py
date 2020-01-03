@@ -13,7 +13,7 @@ import pandas as pd
 import database
 
 #Define
-bid_fta_homepage = 'https://www.bidfta.com/'
+#bid_fta_homepage = 'https://www.bidfta.com/'
 bid_fta_all_auctions = 'https://www.bidfta.com/home'
 
 def change_page (driver,wait,page_num):
@@ -27,7 +27,7 @@ def change_page (driver,wait,page_num):
 	#Wait for loading overlay
 	loadingOverlay = driver.find_element_by_class_name("overlay")
 	wait.until(EC.invisibility_of_element_located(loadingOverlay))
-	time.sleep(2)
+	time.sleep(1)
 
 def clean_up (driver):
 	driver.quit()
@@ -61,7 +61,7 @@ def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city):
 	#Wait for loading overlay
 	loadingOverlay = driver.find_element_by_class_name("overlay")
 	wait.until(EC.invisibility_of_element_located(loadingOverlay))
-	time.sleep(2)
+	time.sleep(1)
 
 def get_all_auctions_on_page (driver,wait):
 	#Print all auction results on page bidfta.com/home
@@ -137,36 +137,26 @@ def get_all_items_by_auction_id(driver,wait,auction_id,auction_dictionary):
 	return all_items_dict
 
 #Finish building this function to loop through all auctions and get items.
-def add_items_to_all_auctions(driver,wait,auction_dictionary):
-
-	database.setup_database()
-	conn = database.create_connection('data/pythonsqlite.db')
-	cursor = conn.cursor()
+def add_items_to_all_auctions(driver,wait,auction_dictionary,connection):
+	#Create a cursor for database entries
+	cursor = connection.cursor()
 
 	#Add auction details to database
 	database.add_auction_details_to_database(auction_dictionary,cursor)
 
-	for key,value in auction_dictionary.items():
+	for key in auction_dictionary.keys():
+		#Get auction items by auction id
 		auction_id_value = key
-        #auction_end_value = value[0]
-        #auction_time_remaining_value = value[1]
-        #auction_link_value = value[2]
 		all_items_for_auction = get_all_items_by_auction_id(driver,wait,auction_id_value,auction_dictionary)
 		
 		#Add auction items to database
 		database.add_items_to_database(all_items_for_auction,auction_id_value,cursor)
 
-
-	#Add items to auction_dictionary
-	#auction_details.extend(item_details)
-	#auction_dictionary_with_items[auction_id] = auction_details
-
-	conn.commit()
+	#Commit the items to the database and close the cursor
+	connection.commit()
 	cursor.close()
-	conn.close()
 
-	return None #auction_dictionary_with_items
-
+	return None
 
 def find_all_auctions_by_city(driver,wait,city):
 	auction_dictionary = {}
@@ -194,6 +184,7 @@ def setup_driver (headless,browser,implicitly_wait):
 	#Wait time when using explicit wait
 	wait = WebDriverWait(driver, 10)
 	driver.implicitly_wait(10)
+
 	return driver,actions,wait
 
 

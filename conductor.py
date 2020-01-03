@@ -12,45 +12,53 @@ headless = False #Open the browser in headless mode = True/False
 implicitly_wait = 15 #Seconds to wait implicitly if not explicitly set
 
 #############################
+##### Database Fuctions #####
+#############################
+#Create empty database with auction and auction_items table
+database.setup_database()
+connection = database.create_connection('data/pythonsqlite.db')
+
+#############################
 ######   Web Scraping  ######
 #############################
 #Driver setup
 driver,actions,wait = crawler.setup_driver(headless,browser,implicitly_wait)
+
 #Get all auctions
 all_auctions = crawler.find_all_auctions_by_city(driver,wait,city)
 
+#Add items to all auctions
+crawler.add_items_to_all_auctions(driver,wait,all_auctions,connection)
+
+'''
 #Statically set auction_id for this test
 #auction_id = list(all_auctions.keys())[0]
 
 #Pull items for one auction - This just gets one auctions items
 #Using this while testing so it doesnt recursively grab all auctions items. Need to build function to do that for production
 #all_items_for_auction = crawler.get_all_items_by_auction_id(driver,wait,auction_id,all_auctions)
-
-crawler.add_items_to_all_auctions(driver,wait,all_auctions)
-
-#############################
-##### Database Fuctions #####
-#############################
-#Create empty database with auction and auction_items table
 '''
-database.setup_database()
-conn = database.create_connection('data/pythonsqlite.db')
-cursor = conn.cursor()
-'''
-
-#Add auction details to database
-#database.add_auction_details_to_database(all_auctions,cursor)
-
-#Add auction items to database
-#database.add_items_to_database(all_items_for_auction,auction_id,cursor)
 
 #############################
 #####      Cleanup      #####
 #############################
 #conn.commit()
 #cursor.close()
-#conn.close()
+connection.close()
 crawler.clean_up(driver)
+
+'''
+################################################################################################
+#cursor = conn.cursor()
+
+#Add auction details to database
+#database.add_auction_details_to_database(all_auctions,cursor)
+
+#Add auction items to database
+#database.add_items_to_database(all_items_for_auction,auction_id,cursor)
+'''
+
+
 
 '''
 #Get one page of auctions for cincinnati
