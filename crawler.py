@@ -145,6 +145,7 @@ def add_items_to_all_auctions(driver,wait5,wait_halfsec,auction_dictionary,conne
 
 	#Add auction details to database
 	database.add_auction_details_to_database(auction_dictionary,cursor)
+	connection.commit()
 
 	#Debug
 	counter = 0
@@ -159,14 +160,14 @@ def add_items_to_all_auctions(driver,wait5,wait_halfsec,auction_dictionary,conne
 		
 		#Add auction items to database
 		database.add_items_to_database(all_items_for_auction,auction_id_value,cursor)
+		connection.commit()
 
 		#Debug
 		print(key)
 		print("--- %s seconds ---" % (time.time() - start_time))
 		print(str(counter) + " of " + str(len(auction_dictionary.keys())))
 
-	#Commit the items to the database and close the cursor
-	connection.commit()
+	#Close the cursor
 	cursor.close()
 
 	return None

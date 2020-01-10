@@ -1,7 +1,8 @@
 import crawler
 import database
-import time
 
+#Debug
+import time
 total_time = time.time()
 
 #############################
@@ -9,7 +10,7 @@ total_time = time.time()
 #############################
 city = 'Cincinnati'
 browser = 'FIREFOX' #FIREFOX or CHROME. Havent tested with Chrome yet
-headless = False #Open the browser in headless mode = True/False
+headless = True #Open the browser in headless mode = True/False
 implicitly_wait = 5 #Seconds to wait implicitly if not explicitly set
 database_file = r'data/pythonsqlite.db'
 
