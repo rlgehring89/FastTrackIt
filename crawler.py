@@ -34,7 +34,7 @@ def change_page(driver,wait,page_num):
 def clean_up(driver):
 	driver.quit()
 
-def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city):
+def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city,state):
 	#Open the Webpage
 	driver.get(bid_fta_all_auctions)
 
@@ -44,18 +44,37 @@ def filter_auctions_by_warehouse_city(driver,wait,bid_fta_all_auctions,city):
 
 	#Find all the dropdown options
 	warehouse_dropdown = driver.find_element_by_xpath("//*[@class='multiselect-container dropdown-menu']")
-	warehouses = warehouse_dropdown.find_elements_by_tag_name("li")
+
+	#Expand the state
+	#warehouse_states = warehouse_dropdown.find_elements_by_xpath("//*[@class='multiselect-item multiselect-group']")
+	warehouse_states = warehouse_dropdown.find_elements_by_tag_name("li")
+
+	#Loop through the states for any containing the state of interest and expand them
+	for warehouse_state in warehouse_states:
+		warehouse_state_name = warehouse_state.text
+		if state in warehouse_state_name:
+			warehouse_state_caret = warehouse_state.find_element_by_class_name("caret-container")
+			warehouse_state_caret.click()
+			break
+			#Checks that the warehouse location isnt already selected since we dont want it to de-select it
+			#warehouse_state_checkbox = warehouse_state.get_attribute()
+			#if "active" not in warehouse_state_checkbox:
+			#	warehouse_state.click()
+
+	#Find the City
+	warehouses = warehouse_dropdown.find_elements_by_tag_name("a")
 
 	#Loop through the warehouse locations for any containing the city of interest and select them
 	for warehouse in warehouses:
-		warehouse_location = warehouse.find_element_by_class_name("checkbox")
-		warehouse_location_name = warehouse_location.get_attribute("title")
-		if city in warehouse_location_name:
-			#Checks that the warehouse location isnt already selected since we dont want it to de-select it
-			warehouse_location_classes = warehouse.get_attribute("class")
-			if "active" not in warehouse_location_classes:
-				warehouse.click()
-	
+		warehouse_location = warehouse.find_elements_by_class_name("checkbox")
+		if len(warehouse_location) > 0:
+			warehouse_location_name = warehouse_location[0].get_attribute("title")
+			if city in warehouse_location_name:
+				#Checks that the warehouse location isnt already selected since we dont want it to de-select it
+				warehouse_location_classes = warehouse.get_attribute("class")
+				if "active" not in warehouse_location_classes:
+					warehouse.click()
+		
 	#Click the filter button
 	filter_button = driver.find_element_by_xpath("//*[@class='btn btn-lg btn-style filter-btn']")
 	filter_button.click()
@@ -82,8 +101,9 @@ def get_all_auctions_on_page (driver,wait):
 
 	return auction_dictionary
 	
-def get_total_pages (driver):
-	total_pages = driver.find_element_by_xpath("//span[@class='total total_page']")
+def get_total_pages (driver,wait):
+	#total_pages = driver.find_element_by_xpath("//span[@class='total total_page']")
+	total_pages = wait.until(EC.presence_of_element_located((By.XPATH, "//span[@class='total total_page']")))
 
 	return int(total_pages.text)
 
@@ -131,7 +151,7 @@ def get_all_items_by_auction_id(driver,wait5,wait_halfsec,auction_id,auction_dic
 	navigate_to_auction_items_by_auction_id(driver,auction_id,auction_dictionary)
 
 	#Get the number of result pages
-	total_result_pages = get_total_pages (driver)
+	total_result_pages = get_total_pages (driver,wait5)
 
 	#Scan all pages and pull auction info into new dictionary
 	all_items_dict = {}
@@ -179,11 +199,11 @@ def add_items_to_all_auctions(driver,wait5,wait_halfsec,auction_dictionary,conne
 
 	return None
 
-def find_all_auctions_by_city(driver,wait5,city):
+def find_all_auctions_by_city(driver,wait5,city,state):
 	auction_dictionary = {}
-	filter_auctions_by_warehouse_city(driver,wait5,bid_fta_all_auctions,city)
+	filter_auctions_by_warehouse_city(driver,wait5,bid_fta_all_auctions,city,state)
 	#Get the number of result pages
-	total_result_pages = get_total_pages (driver)
+	total_result_pages = get_total_pages (driver,wait5)
 	#Scan all pages and pull auction info
 	for i in range(2, total_result_pages+1):
 		auction_dictionary.update(get_all_auctions_on_page(driver,wait5))
@@ -203,8 +223,8 @@ def setup_driver (headless,browser,implicitly_wait):
 	
 	actions = ActionChains(driver)
 	#Wait time when using explicit wait
-	wait5 = WebDriverWait(driver, 5)
-	wait_halfsec = WebDriverWait(driver, .5)
+	wait5 = WebDriverWait(driver, 10)
+	wait_halfsec = WebDriverWait(driver, 1)
 	driver.implicitly_wait(implicitly_wait)
 
 	return driver,actions,wait5,wait_halfsec

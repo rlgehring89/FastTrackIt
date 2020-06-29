@@ -9,9 +9,10 @@ total_time = time.time()
 #####   Define options  #####
 #############################
 city = 'Cincinnati'
+state = 'Ohio'
 browser = 'FIREFOX' #FIREFOX or CHROME. Havent tested with Chrome yet
-headless = True #Open the browser in headless mode = True/False
-implicitly_wait = 5 #Seconds to wait implicitly if not explicitly set
+headless = False #Open the browser in headless mode = True/False
+implicitly_wait = 20 #Seconds to wait implicitly if not explicitly set
 database_file = r'data/pythonsqlite.db'
 
 #############################
@@ -28,7 +29,7 @@ connection = database.create_connection(database_file)
 driver,actions,wait5,wait_halfsec = crawler.setup_driver(headless,browser,implicitly_wait)
 
 #Get all auctions
-all_auctions = crawler.find_all_auctions_by_city(driver,wait5,city)
+all_auctions = crawler.find_all_auctions_by_city(driver,wait5,city,state)
 
 #Add items to all auctions
 crawler.add_items_to_all_auctions(driver,wait5,wait_halfsec,all_auctions,connection)
