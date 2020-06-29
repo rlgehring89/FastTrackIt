@@ -10,7 +10,5 @@ The database will store auction details along with all auction items.
 *Database - Database setup and maintenance functions  
 
 ## Requirements
-*python selenium web driver
-**pip install selnium
-*geckodriver
-**Download and add the executable to PATH
+*python selenium web driver - pip install selnium
+*geckodriver - Download and add the executable to PATH
