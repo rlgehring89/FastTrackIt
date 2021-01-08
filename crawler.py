@@ -221,10 +221,10 @@ def setup_driver (headless,browser,implicitly_wait):
 	else:
 		driver = webdriver.Firefox()
 	
-	actions = ActionChains(driver)
+	#actions = ActionChains(driver)
 	#Wait time when using explicit wait
 	wait5 = WebDriverWait(driver, 10)
 	wait_halfsec = WebDriverWait(driver, 1)
 	driver.implicitly_wait(implicitly_wait)
 
-	return driver,actions,wait5,wait_halfsec
+	return driver,wait5,wait_halfsec
